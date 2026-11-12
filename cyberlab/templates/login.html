@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Anmelden{% endblock %}
+{% block content %}
+<div class="auth-box card">
+  <h1>Anmelden</h1>
+  {% if ldap %}<p class="muted">Mit deinem Institutskonto (ohne @-Domain) anmelden.</p>{% endif %}
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Benutzername<input name="username" autocomplete="username" required autofocus></label>
+    <label>Passwort<input type="password" name="password" autocomplete="current-password" required></label>
+    <label class="check"><input type="checkbox" name="remember"> Angemeldet bleiben</label>
+    <button class="btn btn-block">Anmelden</button>
+  </form>
+  {% if allow_registration %}
+  <p class="muted small">Noch kein Konto? <a href="{{ url_for('auth.register') }}">Registrieren</a></p>
+  {% endif %}
+</div>
+{% endblock %}

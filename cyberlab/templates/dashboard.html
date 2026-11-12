@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import room_card %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Hallo {{ current_user.name }} 👋</h1>
+<div class="stats-row stats-cards">
+  <div class="card"><strong>{{ current_user.points }}</strong><span>Punkte</span></div>
+  <div class="card"><strong>#{{ rank }}</strong><span>Rang</span></div>
+  <div class="card"><strong>{{ current_user.streak or 0 }}</strong><span>Tage in Folge</span></div>
+  <div class="card"><strong>{{ completed|length }}</strong><span>Räume abgeschlossen</span></div>
+</div>
+
+{% if active_lab %}
+<div class="card card-highlight">
+  <strong>🖥 Laufende Maschine:</strong> {{ active_lab.room.title }}
+  {% if active_lab.ip %} – <code>{{ active_lab.ip }}</code>{% endif %}
+  <a class="btn btn-small" href="{{ url_for('main.room', slug=active_lab.room.slug) }}#lab">Öffnen</a>
+</div>
+{% endif %}
+
+<div class="two-col">
+  <section>
+    <h2>Weitermachen</h2>
+    {% if in_progress %}
+      <div class="grid">{% for r, d, t in in_progress %}{{ room_card(r, d, t) }}{% endfor %}</div>
+    {% else %}
+      <p class="muted">Noch nichts begonnen. Wie wäre es mit einem Lernpfad?</p>
+      <div class="grid">
+      {% for p in paths %}
+        <a class="card" href="{{ url_for('main.path', slug=p.slug) }}"><h3>{{ p.title }}</h3><p class="muted small">{{ p.audience }}</p></a>
+      {% endfor %}
+      </div>
+    {% endif %}
+  </section>
+  <aside>
+    {% if rotd %}
+    <h2>Raum des Tages</h2>
+    {{ room_card(rotd) }}
+    {% endif %}
+    <h2>Zuletzt gelöst</h2>
+    <ul class="feed">
+      {% for s in recent %}
+        <li><span class="accent">+{{ s.points_awarded }}</span> {{ s.question.task.room.title }}
+          <span class="muted small">{{ s.created_at.strftime('%d.%m. %H:%M') }}</span></li>
+      {% else %}<li class="muted">Noch keine Lösungen.</li>{% endfor %}
+    </ul>
+  </aside>
+</div>
+{% endblock %}

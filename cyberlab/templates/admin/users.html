@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Benutzer{% endblock %}
+{% block content %}
+<h1>Benutzer</h1>
+<nav class="subnav">
+  <a href="{{ url_for('admin.index') }}">Übersicht</a>
+  <a href="{{ url_for('admin.users') }}" class="active">Benutzer</a>
+</nav>
+<table class="table">
+  <thead><tr><th>Benutzer</th><th>Name</th><th>Institut</th><th>Quelle</th><th class="num">Punkte</th><th>Rolle</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for u, pts in rows %}
+  <tr class="{{ 'disabled' if not u.is_active_flag }}">
+    <td>{{ u.username }}</td><td>{{ u.display_name or '–' }}</td>
+    <td class="small">{{ u.department or '–' }}</td><td>{{ u.auth_source }}</td>
+    <td class="num">{{ pts }}</td>
+    <td>{{ 'Admin' if u.is_admin else 'Nutzer' }}</td>
+    <td>{{ 'aktiv' if u.is_active_flag else 'gesperrt' }}</td>
+    <td class="btn-row">
+      {% if u.id != current_user.id %}
+      <form method="post" action="{{ url_for('admin.toggle_admin', uid=u.id) }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-small">{{ 'Admin entziehen' if u.is_admin else 'Zum Admin' }}</button>
+      </form>
+      <form method="post" action="{{ url_for('admin.toggle_active', uid=u.id) }}" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-small">{{ 'Sperren' if u.is_active_flag else 'Entsperren' }}</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

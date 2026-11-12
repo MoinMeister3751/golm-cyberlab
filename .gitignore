@@ -1,0 +1,10 @@
+.venv/
+instance/
+logs/
+backup/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+vpn-profiles/
+.env

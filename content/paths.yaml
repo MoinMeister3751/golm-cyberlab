@@ -1,0 +1,16 @@
+# Lernpfade: Reihenfolge der Räume per slug
+- slug: awareness
+  title: Security-Awareness für alle
+  audience: Alle Beschäftigten, Doktorand:innen und Gäste
+  description: >
+    Die wichtigsten Grundlagen in unter einer Stunde – Phishing erkennen,
+    Konten absichern und Forschungsdaten sicher teilen. Keine Vorkenntnisse nötig.
+  rooms: [phishing-erkennen, forschungsdaten-schuetzen]
+
+- slug: einstieg-offensive-security
+  title: Einstieg Offensive Security
+  audience: IT-Personal, Admins, technisch Interessierte
+  description: >
+    Vom ersten Linux-Befehl über Netzwerkscans bis zur ersten Web-Schwachstelle –
+    mit echten Übungsmaschinen in der isolierten Laborumgebung.
+  rooms: [linux-grundlagen, kodierung-und-hashes, netzwerk-scanning, web-sql-injection]

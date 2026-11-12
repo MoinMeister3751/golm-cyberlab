@@ -1,0 +1,71 @@
+slug: linux-grundlagen
+title: Linux-Grundlagen
+summary: Die ersten Befehle auf einer echten Linux-Maschine – Navigieren, Dateien lesen, Rechte verstehen.
+category: Linux
+difficulty: leicht
+estimated_minutes: 40
+order: 40
+tags: [linux, shell, grundlagen, lab]
+
+lab:
+  template_vmid: 9001   # Proxmox-Template (siehe deploy/proxmox/lab-templates.md)
+  minutes: 60
+  info: |
+    Anmeldung per SSH: `ssh student@<IP>` – Passwort: `golm-lab`
+
+tasks:
+  - title: Verbinden
+    body: |
+      Starte oben die Übungsmaschine. Sobald eine IP angezeigt wird, verbinde dich per SSH
+      (unter Windows einfach in PowerShell):
+
+      ```
+      ssh student@10.66.x.y
+      ```
+    questions:
+      - key: linux-1
+        prompt: Mit welchem Befehl zeigst du an, in welchem Verzeichnis du dich befindest?
+        answer: pwd
+        points: 10
+
+  - title: Dateien finden und lesen
+    body: |
+      | Befehl | Zweck |
+      |---|---|
+      | `ls -la` | Dateien inkl. versteckter anzeigen |
+      | `cd ordner` | Verzeichnis wechseln |
+      | `cat datei` | Inhalt ausgeben |
+      | `find / -name "*.txt" 2>/dev/null` | Dateien suchen |
+
+      Im Home-Verzeichnis liegt eine versteckte Datei.
+    questions:
+      - key: linux-2
+        prompt: Welche Option von `ls` zeigt versteckte Dateien (die mit `.` beginnen) an?
+        answer: [-a, -la, -al]
+        points: 10
+      - key: linux-3
+        prompt: Lies die versteckte Datei in `/home/student`. Wie lautet die Flagge?
+        answer: GOLM{v3rst3ckt3_d4t31en_s1nd_n1cht_s1ch3r}
+        case_sensitive: true
+        format: "GOLM{...}"
+        points: 20
+
+  - title: Berechtigungen
+    body: |
+      `ls -l` zeigt z. B. `-rw-r----- 1 root forschung 512 bericht.txt`:
+      Besitzer darf lesen/schreiben, Gruppe `forschung` nur lesen, alle anderen nichts.
+
+      In `/srv/projekt` liegt `geheim.txt`, die nur Mitglieder der Gruppe `forschung` lesen dürfen.
+      Finde heraus, mit welchem Befehl `student` trotzdem Rechte erhält (`sudo -l`).
+    questions:
+      - key: linux-4
+        prompt: Welche Oktal-Schreibweise entspricht `rw-r-----`?
+        answer: "640"
+        points: 10
+      - key: linux-5
+        prompt: Wie lautet die Flagge in `/srv/projekt/geheim.txt`?
+        answer: GOLM{sud0_r3chte_g3n4u_pr0f3n}
+        case_sensitive: true
+        format: "GOLM{...}"
+        points: 30
+        hint: "`sudo -l` verrät, welchen Befehl du als Gruppe forschung ausführen darfst."

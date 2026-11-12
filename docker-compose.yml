@@ -1,0 +1,47 @@
+# Golm CyberLab – Betrieb auf Ubuntu mit Docker.
+#   cp .env.example .env    # anpassen (mindestens CYBERLAB_SECRET_KEY)
+#   docker compose up -d --build
+#
+# Caddy terminiert HTTP/HTTPS und leitet an den App-Container weiter.
+# Die App selbst ist NICHT direkt am Host veröffentlicht (nur über Caddy erreichbar).
+
+services:
+  app:
+    build: .
+    image: golm-cyberlab:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CYBERLAB_TRUST_PROXY: "1"          # hinter Caddy
+    volumes:
+      - cyberlab-data:/data              # SQLite-Datenbank (persistent)
+      - ./content:/app/content:ro        # Räume/Lernpfade – bearbeitbar auf dem Host
+      - ${CYBERLAB_VPN_DIR:-./vpn-profiles}:/vpn:ro   # optionale WireGuard-Profile
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/',timeout=4).status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CYBERLAB_SITE_ADDRESS: ${CYBERLAB_SITE_ADDRESS:-:80}
+    volumes:
+      - ./deploy/docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  cyberlab-data:
+  caddy-data:
+  caddy-config:

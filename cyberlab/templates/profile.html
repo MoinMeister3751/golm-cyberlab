@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Profil{% endblock %}
+{% block content %}
+<h1>{{ current_user.name }}</h1>
+<div class="stats-row stats-cards">
+  <div class="card"><strong>{{ current_user.points }}</strong><span>Punkte</span></div>
+  <div class="card"><strong>#{{ rank }}</strong><span>Rang</span></div>
+  <div class="card"><strong>{{ badges|length }}</strong><span>Abzeichen</span></div>
+  <div class="card"><strong>{{ current_user.streak or 0 }}</strong><span>Tage in Folge</span></div>
+</div>
+
+<div class="two-col">
+  <section>
+    <h2>Abzeichen</h2>
+    <div class="badges">
+      {% for r in badges %}<div class="badge" title="{{ r.summary }}"><span>🏅</span>{{ r.title }}</div>
+      {% else %}<p class="muted">Schließe einen Raum vollständig ab, um ein Abzeichen zu erhalten.</p>{% endfor %}
+    </div>
+    <h2>Punkte nach Kategorie</h2>
+    <table class="table">
+      {% for cat, pts in by_cat %}<tr><td>{{ cat }}</td><td class="num">{{ pts }}</td></tr>
+      {% else %}<tr><td class="muted">Noch keine Punkte.</td></tr>{% endfor %}
+    </table>
+    {% if vpn_enabled %}
+    <h2>Lab-Zugang</h2>
+    <p>Lade dein persönliches WireGuard-Profil herunter und importiere es in den WireGuard-Client.</p>
+    <a class="btn btn-small" href="{{ url_for('labs.vpn_config') }}">VPN-Profil herunterladen</a>
+    {% endif %}
+  </section>
+  <aside class="card">
+    <h2>Einstellungen</h2>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Anzeigename<input name="display_name" value="{{ current_user.display_name or '' }}"></label>
+      <label>Institut / Bereich
+        <select name="department">
+          {% for d in departments %}<option {{ 'selected' if d == current_user.department }}>{{ d }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" name="show_on_leaderboard" {{ 'checked' if current_user.show_on_leaderboard }}> In der Bestenliste anzeigen</label>
+      {% if current_user.auth_source == 'local' %}
+      <fieldset>
+        <legend>Passwort ändern</legend>
+        <label>Aktuelles Passwort<input type="password" name="old_password" autocomplete="current-password"></label>
+        <label>Neues Passwort<input type="password" name="new_password" minlength="12" autocomplete="new-password"></label>
+      </fieldset>
+      {% else %}
+      <p class="muted small">Anmeldung über Institutskonto (Active Directory).</p>
+      {% endif %}
+      <button class="btn btn-block">Speichern</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

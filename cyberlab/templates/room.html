@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ room.title }}{% endblock %}
+{% block content %}
+{% set done, total = room.progress_for(current_user) %}
+<div class="room-header">
+  <div>
+    <p class="eyebrow">{{ room.category }} · <span class="diff diff-{{ room.difficulty }}">{{ room.difficulty_label }}</span>
+      {% if room.estimated_minutes %} · ~{{ room.estimated_minutes }} Min.{% endif %}</p>
+    <h1>{{ room.title }}</h1>
+    <p class="lead">{{ room.summary }}</p>
+  </div>
+  <div class="room-progress">
+    <strong>{{ done }}/{{ total }}</strong> Fragen
+    <progress value="{{ done }}" max="{{ total or 1 }}"></progress>
+  </div>
+</div>
+
+{% if room.lab_template_vmid %}
+<section id="lab" class="card lab-panel" data-status-url="{{ url_for('labs.status', slug=room.slug) }}"
+         data-lab-status="{{ lab.status if lab else 'none' }}">
+  <h2>🖥 Übungsmaschine</h2>
+  {% if not lab %}
+    <p>Für diesen Raum kannst du eine eigene, isolierte Maschine starten.</p>
+    {% if room.lab_info %}<div class="md">{{ room.lab_info|markdown }}</div>{% endif %}
+    <form method="post" action="{{ url_for('labs.start', slug=room.slug) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn">Maschine starten</button>
+    </form>
+  {% else %}
+    <dl class="lab-info">
+      <dt>Status</dt><dd><span class="status status-{{ lab.status }}" data-field="status">{{ lab.status }}</span></dd>
+      <dt>Ziel-IP</dt><dd><code data-field="ip">{{ lab.ip or '…wird ermittelt' }}</code></dd>
+      <dt>Restzeit</dt><dd><span data-field="countdown" data-seconds="{{ lab.seconds_left }}">–</span></dd>
+    </dl>
+    {% if lab.message %}<p class="muted" data-field="message">{{ lab.message }}</p>{% endif %}
+    <p class="muted small">{{ access_info }}</p>
+    <div class="btn-row">
+      {% if lab.status == 'running' %}
+      <form method="post" action="{{ url_for('labs.extend', lab_id=lab.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-small">+ Zeit verlängern</button>
+      </form>
+      {% endif %}
+      {% if lab.status in ('provisioning', 'running', 'error') %}
+      <form method="post" action="{{ url_for('labs.stop', lab_id=lab.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-danger btn-small">Maschine beenden</button>
+      </form>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+{% endif %}
+
+{% for task in room.tasks %}
+<section class="card task" id="task-{{ loop.index }}">
+  {% set tdone = task.questions|map(attribute='id')|select('in', solved)|list|length %}
+  <details {{ 'open' if loop.first or tdone < task.questions|length }}>
+    <summary>
+      <span class="task-num">Aufgabe {{ loop.index }}</span> {{ task.title }}
+      {% if task.questions %}<span class="task-state {{ 'ok' if tdone == task.questions|length }}">{{ tdone }}/{{ task.questions|length }}</span>{% endif %}
+    </summary>
+    <div class="md">{{ task.body_md|markdown }}</div>
+
+    {% for q in task.questions %}
+    <div class="question {{ 'solved' if q.id in solved }}" id="q-{{ q.id }}">
+      <div class="md q-prompt">{{ q.prompt|markdown }}</div>
+      {% if q.id in solved %}
+        <div class="q-solved">✔ Gelöst (+{{ solved[q.id].points_awarded }} P)</div>
+        {% if q.explanation %}<div class="md explanation">{{ q.explanation|markdown }}</div>{% endif %}
+      {% else %}
+        <form method="post" action="{{ url_for('main.answer', slug=room.slug, qid=q.id) }}" class="answer-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input name="answer" placeholder="{{ q.answer_format or 'Antwort' }}" autocomplete="off" required>
+          <button class="btn btn-small">Prüfen</button>
+          <span class="muted small">{{ q.points }} P</span>
+        </form>
+        {% if q.hint %}
+          {% if q.id in hints %}
+            <div class="hint">💡 {{ q.hint }}</div>
+          {% else %}
+            <form method="post" action="{{ url_for('main.hint', slug=room.slug, qid=q.id) }}" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="linkbtn small" data-confirm="Tipp anzeigen? Die Frage gibt dann nur noch die halbe Punktzahl.">💡 Tipp anzeigen (halbe Punkte)</button>
+            </form>
+          {% endif %}
+        {% endif %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </details>
+</section>
+{% endfor %}
+{% endblock %}

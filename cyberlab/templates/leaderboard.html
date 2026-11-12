@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Bestenliste{% endblock %}
+{% block content %}
+<h1>Bestenliste</h1>
+<div class="two-col">
+  <section>
+    <form class="filters" method="get">
+      <select name="period">
+        <option value="all" {{ 'selected' if period == 'all' }}>Gesamt</option>
+        <option value="30d" {{ 'selected' if period == '30d' }}>Letzte 30 Tage</option>
+      </select>
+      <select name="department">
+        <option value="">Alle Institute</option>
+        {% for d in departments %}<option {{ 'selected' if d == sel_dept }}>{{ d }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-small">Anzeigen</button>
+    </form>
+    <table class="table">
+      <thead><tr><th>#</th><th>Name</th><th>Institut</th><th class="num">Fragen</th><th class="num">Punkte</th></tr></thead>
+      <tbody>
+      {% for user, pts, cnt in rows %}
+        <tr class="{{ 'me' if user.id == current_user.id }}">
+          <td>{{ loop.index }}</td><td>{{ user.name }}</td>
+          <td class="muted small">{{ user.department or '–' }}</td>
+          <td class="num">{{ cnt }}</td><td class="num"><strong>{{ pts }}</strong></td>
+        </tr>
+      {% else %}<tr><td colspan="5" class="muted">Noch keine Einträge.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    <p class="muted small">Du möchtest nicht in der Bestenliste erscheinen? Das kannst du im Profil abschalten.</p>
+  </section>
+  <aside>
+    <h2>Institutswertung</h2>
+    <p class="muted small">Durchschnittliche Punkte pro aktivem Mitglied.</p>
+    <table class="table">
+      <tbody>
+      {% for d in dept_ranking %}
+        <tr><td>{{ loop.index }}</td><td>{{ d.name }}<br><span class="muted small">{{ d.members }} aktiv</span></td><td class="num"><strong>{{ d.avg }}</strong></td></tr>
+      {% else %}<tr><td class="muted">Noch keine Daten.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </aside>
+</div>
+{% endblock %}

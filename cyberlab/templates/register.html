@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Registrieren{% endblock %}
+{% block content %}
+<div class="auth-box card">
+  <h1>Konto erstellen</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Benutzername<input name="username" value="{{ request.form.username }}" required pattern="[A-Za-z0-9._\-]{3,40}"></label>
+    <label>Anzeigename (optional, erscheint in der Bestenliste)<input name="display_name" value="{{ request.form.display_name }}"></label>
+    <label>Instituts-E-Mail<input type="email" name="email" value="{{ request.form.email }}" required></label>
+    <label>Institut / Bereich
+      <select name="department" required>
+        <option value="">– bitte wählen –</option>
+        {% for d in departments %}<option {{ 'selected' if request.form.department == d }}>{{ d }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Passwort (min. 12 Zeichen)<input type="password" name="password" minlength="12" required autocomplete="new-password"></label>
+    <label>Passwort wiederholen<input type="password" name="password2" minlength="12" required autocomplete="new-password"></label>
+    <button class="btn btn-block">Registrieren</button>
+  </form>
+</div>
+{% endblock %}

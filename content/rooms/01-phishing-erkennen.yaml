@@ -1,0 +1,85 @@
+slug: phishing-erkennen
+title: Phishing erkennen
+summary: Woran du gefälschte E-Mails erkennst – mit Beispielen, wie sie an Forschungseinrichtungen tatsächlich ankommen.
+category: Awareness
+difficulty: sehr-leicht
+estimated_minutes: 15
+order: 10
+tags: [awareness, e-mail, phishing, alle]
+
+tasks:
+  - title: Warum Forschungsinstitute Ziel sind
+    body: |
+      Forschungseinrichtungen sind attraktive Ziele: unveröffentlichte Ergebnisse,
+      Rechenzeit auf Clustern, Zugänge zu Kooperationspartnern und Drittmittelkonten.
+      Die meisten erfolgreichen Angriffe beginnen **nicht** mit einem raffinierten Exploit,
+      sondern mit einer E-Mail, auf die jemand klickt.
+
+      Typische Köder am Campus:
+
+      * „Ihr Postfach ist voll – jetzt Speicher erweitern“
+      * gefälschte Einladungen zu Konferenzen oder Peer-Reviews
+      * „Rechnung“ eines vermeintlichen Laborlieferanten
+      * Nachricht der „IT-Abteilung“ mit Bitte um Passwort-Bestätigung
+    questions:
+      - key: phish-1
+        prompt: Wie nennt man Phishing, das gezielt auf eine bestimmte Person zugeschnitten ist (z. B. mit Namen der Arbeitsgruppe)?
+        answer: [spear phishing, spear-phishing, spearphishing]
+        format: "***** ********"
+        points: 10
+        explanation: Beim **Spear-Phishing** recherchieren Angreifende vorher öffentlich verfügbare Infos (Institutswebseite, Publikationen, LinkedIn).
+
+  - title: Die verräterischen Merkmale
+    body: |
+      Sieh dir diese E-Mail an:
+
+      ```
+      Von:     IT-Service <it-service@mpg-support-desk.com>
+      Betreff: DRINGEND: Ihr Konto wird in 24 Stunden gesperrt
+
+      Sehr geehrter Nutzer,
+
+      wegen einer Sicherheitsüberprüfung müssen Sie Ihr Passwort bestätigen,
+      andernfalls wird Ihr Konto gesperrt.
+
+      >> Jetzt bestätigen: https://mpg-login.account-verify.net/golm
+      ```
+
+      Prüfe immer:
+
+      | Merkmal | Worauf achten? |
+      |---|---|
+      | Absender-Domain | Gehört sie wirklich zur Einrichtung? |
+      | Link-Ziel | Mit der Maus darüberfahren, **nicht klicken** – welche Domain steht ganz rechts vor dem ersten `/`? |
+      | Druck & Angst | „sofort“, „24 Stunden“, „gesperrt“ |
+      | Anrede | unpersönlich („Sehr geehrter Nutzer“) |
+    questions:
+      - key: phish-2
+        prompt: Welche Domain gehört der Link in der E-Mail *tatsächlich*? (nur die registrierte Domain, z. B. `beispiel.de`)
+        answer: account-verify.net
+        format: "*******-******.***"
+        points: 20
+        hint: Entscheidend ist der Teil direkt vor dem ersten Schrägstrich – und davon nur die letzten zwei Bestandteile.
+        explanation: "`mpg-login.` ist nur eine Subdomain, die Angreifende frei wählen können. Die eigentliche Domain ist **account-verify.net**."
+      - key: phish-3
+        prompt: Fordert eine seriöse IT-Abteilung dich per E-Mail auf, dein Passwort über einen Link zu „bestätigen“? (ja/nein)
+        answer: nein
+        points: 10
+
+  - title: Richtig reagieren
+    body: |
+      Wenn du eine verdächtige E-Mail erhältst:
+
+      1. **Nicht** auf Links klicken, **keine** Anhänge öffnen.
+      2. Die E-Mail über die „Phishing melden“-Funktion bzw. an die IT-Sicherheit weiterleiten.
+      3. Hast du bereits geklickt oder Daten eingegeben? **Sofort** die IT anrufen und das Passwort ändern.
+         Ein früher Anruf ist nie peinlich – er verhindert oft großen Schaden.
+
+      > Faustregel: Unsicher? Lieber einmal zu viel melden.
+    questions:
+      - key: phish-4
+        prompt: Du hast auf einen Phishing-Link geklickt und dein Passwort eingegeben. Was ist das Wichtigste, das du *sofort* tun solltest? (Stichwort, ein Wort)
+        answer: [melden, it informieren, it anrufen, it-sicherheit informieren, anrufen]
+        format: "******"
+        points: 10
+        hint: Wem sagst du Bescheid?

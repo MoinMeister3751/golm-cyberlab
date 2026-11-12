@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Willkommen{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">{{ ORGANISATION }}</p>
+  <h1>IT-Sicherheit lernen,<br>indem man sie <span class="accent">ausprobiert</span>.</h1>
+  <p class="lead">Interaktive Räume, echte Übungsmaschinen in einer isolierten Laborumgebung
+    und Lernpfade – von Phishing-Erkennung für alle Beschäftigten bis zu Pentesting-Grundlagen
+    für die IT.</p>
+  <div class="hero-actions">
+    <a class="btn" href="{{ url_for('auth.login') }}">Anmelden</a>
+    <a class="btn btn-ghost" href="{{ url_for('auth.register') }}">Konto erstellen</a>
+  </div>
+  <div class="stats-row">
+    <div><strong>{{ stats.rooms }}</strong><span>Räume</span></div>
+    <div><strong>{{ stats.users }}</strong><span>Teilnehmende</span></div>
+    <div><strong>{{ stats.solves }}</strong><span>gelöste Aufgaben</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Lernpfade</h2>
+  <div class="grid">
+    {% for p in paths %}
+    <div class="card">
+      <h3>{{ p.title }}</h3>
+      <p class="muted small">Zielgruppe: {{ p.audience }}</p>
+      <p>{{ p.description }}</p>
+      <p class="muted small">{{ p.rooms|length }} Räume</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

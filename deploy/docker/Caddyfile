@@ -1,0 +1,21 @@
+# Reverse-Proxy für Golm CyberLab.
+# Die Adresse kommt aus der Umgebungsvariable CYBERLAB_SITE_ADDRESS (siehe .env).
+# Caddy wählt die passende TLS-Variante automatisch:
+#   :80                     -> nur HTTP (Standard, "läuft sofort")
+#   192.168.5.105           -> HTTPS, automatisch mit internem (selbst signiertem) Caddy-Zertifikat
+#   https://192.168.5.105   -> wie oben, HTTP wird auf HTTPS umgeleitet
+#   cyberlab.example.org    -> HTTPS mit Let's Encrypt (öffentlich auflösbarer DNS-Name nötig)
+#   cyberlab.campus.local   -> interner DNS-Name: zusätzlich die Zeile `tls internal` eintragen
+{$CYBERLAB_SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	request_body {
+		max_size 5MB
+	}
+
+	reverse_proxy app:8080
+
+	header {
+		-Server
+	}
+}

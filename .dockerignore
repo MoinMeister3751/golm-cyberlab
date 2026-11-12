@@ -1,0 +1,14 @@
+.venv/
+instance/
+logs/
+backup/
+vpn-profiles/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.env
+tests/
+docs/
+deploy/windows/
+*.md

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ path.title }}{% endblock %}
+{% block content %}
+<p class="eyebrow"><a href="{{ url_for('main.paths') }}">Lernpfade</a> · {{ path.audience }}</p>
+<h1>{{ path.title }}</h1>
+<p class="lead">{{ path.description }}</p>
+<ol class="path-steps">
+  {% for r in path.rooms %}
+  {% set d, t = r.progress_for(current_user) %}
+  <li class="{{ 'done' if t and d == t }}">
+    <a class="card" href="{{ url_for('main.room', slug=r.slug) }}">
+      <div class="room-card-head">
+        <span class="tag">{{ r.category }}</span>
+        <span class="diff diff-{{ r.difficulty }}">{{ r.difficulty_label }}</span>
+      </div>
+      <h3>{{ r.title }}</h3>
+      <p class="muted">{{ r.summary }}</p>
+      <progress value="{{ d }}" max="{{ t or 1 }}"></progress>
+    </a>
+  </li>
+  {% endfor %}
+</ol>
+{% endblock %}

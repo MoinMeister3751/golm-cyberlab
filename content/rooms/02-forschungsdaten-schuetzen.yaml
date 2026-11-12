@@ -1,0 +1,57 @@
+slug: forschungsdaten-schuetzen
+title: Forschungsdaten schützen
+summary: Passwörter, Zwei-Faktor-Anmeldung, USB-Sticks und sicheres Teilen von Daten mit Kooperationspartnern.
+category: Awareness
+difficulty: sehr-leicht
+estimated_minutes: 20
+order: 20
+tags: [awareness, passwort, mfa, daten, alle]
+
+tasks:
+  - title: Starke Passwörter & Passwortmanager
+    body: |
+      Länge schlägt Komplexität. Eine Passphrase wie `Kolloid-Tasse-Regen-Fahrrad` ist
+      deutlich schwerer zu knacken als `P@ssw0rt1!` – und leichter zu merken.
+
+      * Jedes Konto bekommt ein **eigenes** Passwort.
+      * Ein **Passwortmanager** (z. B. KeePassXC) merkt sich alle für dich.
+      * Ist ein Dienst kompromittiert, probieren Angreifende das Passwort überall
+        (*Credential Stuffing*).
+    questions:
+      - key: data-1
+        prompt: Wie heißt der Angriff, bei dem geleakte Zugangsdaten automatisiert bei vielen anderen Diensten ausprobiert werden?
+        answer: [credential stuffing, credential-stuffing]
+        format: "********** ********"
+        points: 10
+
+  - title: Zwei-Faktor-Anmeldung (MFA)
+    body: |
+      Bei der Mehr-Faktor-Authentifizierung brauchst du zusätzlich zum Passwort etwas,
+      das du **besitzt** (Smartphone-App, Hardware-Token) oder das du **bist** (Fingerabdruck).
+
+      Achtung bei **MFA-Fatigue**: Angreifende mit deinem Passwort lösen immer wieder
+      Push-Anfragen aus und hoffen, dass du irgendwann genervt auf „Bestätigen“ tippst.
+    questions:
+      - key: data-2
+        prompt: Du bekommst eine MFA-Push-Anfrage, obwohl du dich gerade nicht anmeldest. Bestätigen oder ablehnen?
+        answer: ablehnen
+        points: 10
+        explanation: Ablehnen **und** der IT melden – jemand kennt offenbar dein Passwort.
+
+  - title: Daten teilen & Datenträger
+    body: |
+      * Gefundene USB-Sticks **nie** anschließen – ein klassischer Angriffsweg („USB-Drop“).
+      * Forschungsdaten über die vom Institut bereitgestellten Dienste teilen,
+        nicht über private Cloud-Konten.
+      * Personenbezogene Daten (z. B. Probandendaten) unterliegen der **DSGVO**.
+    questions:
+      - key: data-3
+        prompt: Wie heißt die europäische Verordnung, die den Umgang mit personenbezogenen Daten regelt? (Abkürzung)
+        answer: [dsgvo, gdpr, ds-gvo]
+        format: "*****"
+        points: 10
+      - key: data-4
+        prompt: Du findest auf dem Parkplatz einen USB-Stick mit der Aufschrift „Gehälter 2026“. Was tust du damit? (bei der IT …)
+        answer: [abgeben, bei der it abgeben, it abgeben]
+        format: "*******"
+        points: 10

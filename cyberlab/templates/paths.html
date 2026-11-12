@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Lernpfade{% endblock %}
+{% block content %}
+<h1>Lernpfade</h1>
+<p class="lead">Aufeinander aufbauende Räume für unterschiedliche Zielgruppen am Campus.</p>
+<div class="grid grid-wide">
+  {% for p in paths %}
+  {% set ns = namespace(done=0, total=0) %}
+  {% for r in p.rooms %}{% set d, t = r.progress_for(current_user) %}{% set ns.done = ns.done + d %}{% set ns.total = ns.total + t %}{% endfor %}
+  <a class="card" href="{{ url_for('main.path', slug=p.slug) }}">
+    <p class="eyebrow">{{ p.audience }}</p>
+    <h3>{{ p.title }}</h3>
+    <p>{{ p.description }}</p>
+    <p class="muted small">{{ p.rooms|length }} Räume · {{ ns.done }}/{{ ns.total }} Fragen</p>
+    <progress value="{{ ns.done }}" max="{{ ns.total or 1 }}"></progress>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

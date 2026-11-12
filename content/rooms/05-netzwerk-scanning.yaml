@@ -1,0 +1,55 @@
+slug: netzwerk-scanning
+title: Netzwerk-Scanning mit nmap
+summary: Offene Ports und Dienste finden – die erste Phase jedes Penetrationstests.
+category: Netzwerk
+difficulty: leicht
+estimated_minutes: 45
+order: 50
+tags: [netzwerk, nmap, recon, lab]
+
+lab:
+  template_vmid: 9003
+  minutes: 60
+  info: |
+    Scanne ausschließlich die angezeigte Ziel-IP. Scans gegen andere Adressen werden protokolliert.
+
+tasks:
+  - title: Spielregeln
+    body: |
+      Scannen ohne Erlaubnis ist in Deutschland schnell strafbar (§ 202c StGB) und
+      verstößt gegen die IT-Nutzungsordnung. In diesem Raum scannst du **nur** deine
+      eigene Lab-Maschine im isolierten Labornetz.
+    questions:
+      - key: net-1
+        prompt: Welcher Paragraf des StGB stellt das Vorbereiten des Ausspähens und Abfangens von Daten unter Strafe? (Format §202x)
+        answer: [202c, §202c, § 202c]
+        format: "§202*"
+        points: 10
+
+  - title: Ports und Dienste
+    body: |
+      ```
+      nmap -sV <IP>
+      ```
+      `-sV` erkennt die Versionen der laufenden Dienste.
+    questions:
+      - key: net-2
+        prompt: Welcher nmap-Schalter scannt **alle** 65 535 TCP-Ports?
+        answer: -p-
+        points: 10
+      - key: net-3
+        prompt: Auf welchem **ungewöhnlichen** TCP-Port (über 1024) lauscht auf der Lab-Maschine ein Webserver?
+        answer: "8443"
+        points: 20
+        hint: Mit dem Standard-Scan findest du ihn nicht – nimm alle Ports.
+      - key: net-4
+        prompt: Welche FTP-Server-Software (nur der Name) läuft auf Port 21?
+        answer: vsftpd
+        points: 20
+      - key: net-5
+        prompt: Der FTP-Server erlaubt anonyme Anmeldung. Wie lautet die Flagge in der dort liegenden Datei?
+        answer: GOLM{4n0nym3r_ftp_1st_31n_r1s1k0}
+        case_sensitive: true
+        format: "GOLM{...}"
+        points: 30
+        hint: "Benutzername `anonymous`, beliebiges Passwort. Danach `ls` und `get`."

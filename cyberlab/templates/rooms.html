@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_macros.html" import room_card %}
+{% block title %}Räume{% endblock %}
+{% block content %}
+<h1>Räume</h1>
+<form class="filters" method="get">
+  <input name="q" value="{{ search }}" placeholder="Suchen …">
+  <select name="category">
+    <option value="">Alle Kategorien</option>
+    {% for c in categories %}<option {{ 'selected' if c == sel_cat }}>{{ c }}</option>{% endfor %}
+  </select>
+  <select name="difficulty">
+    <option value="">Alle Schwierigkeiten</option>
+    {% for k, v in difficulties.items() %}<option value="{{ k }}" {{ 'selected' if k == sel_diff }}>{{ v }}</option>{% endfor %}
+  </select>
+  <button class="btn btn-small">Filtern</button>
+</form>
+<div class="grid">
+  {% for r in rooms %}
+    {% set d, t = r.progress_for(current_user) %}
+    {{ room_card(r, d, t) }}
+  {% else %}
+    <p class="muted">Keine Räume gefunden.</p>
+  {% endfor %}
+</div>
+{% endblock %}

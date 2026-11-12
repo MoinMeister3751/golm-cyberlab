@@ -1,0 +1,75 @@
+slug: kodierung-und-hashes
+title: Kodierung, Verschlüsselung & Hashes
+summary: Base64, Hex, ROT13 und Hash-Funktionen auseinanderhalten – mit der eingebauten Toolbox lösbar.
+category: Kryptografie
+difficulty: leicht
+estimated_minutes: 30
+order: 30
+tags: [krypto, base64, hash, ctf]
+
+tasks:
+  - title: Kodierung ist keine Verschlüsselung
+    body: |
+      **Kodierung** (Base64, Hex) stellt Daten nur anders dar – jeder kann sie zurückwandeln.
+      **Verschlüsselung** braucht einen Schlüssel. **Hashing** ist eine Einwegfunktion.
+
+      Öffne die [Toolbox](/tools) und dekodiere diese Base64-Zeichenkette:
+
+      ```
+      R09MTXtiNHMzNjRfMXN0X2szMW4zX3YzcnNjaGx1M3NzM2x1bmd9
+      ```
+    questions:
+      - key: crypto-1
+        prompt: Wie lautet die dekodierte Flagge?
+        answer: GOLM{b4s364_1st_k31n3_v3rschlu3ss3lung}
+        case_sensitive: true
+        format: "GOLM{...}"
+        points: 20
+      - key: crypto-2
+        prompt: |
+          Und diese hier ist hex-kodiert:
+
+          `474f4c4d7b6833785f3173745f6e75725f33696e335f6434727374336c6c756e677d`
+        answer: GOLM{h3x_1st_nur_3in3_d4rst3llung}
+        case_sensitive: true
+        format: "GOLM{...}"
+        points: 20
+
+  - title: Caesar & ROT13
+    body: |
+      ROT13 verschiebt jeden Buchstaben um 13 Stellen. Zweimal angewendet ergibt sich
+      wieder der Ursprungstext – „Sicherheit“ bietet das keine.
+
+      ```
+      TBYZ{e0g13_x4aa_w3q3e_xa4px3a}
+      ```
+    questions:
+      - key: crypto-3
+        prompt: Entschlüssle die Flagge.
+        answer: GOLM{r0t13_k4nn_j3d3r_kn4ck3n}
+        case_sensitive: true
+        format: "GOLM{...}"
+        points: 20
+
+  - title: Hash-Funktionen
+    body: |
+      Passwörter werden (hoffentlich) nur als Hash gespeichert. Die Länge eines Hex-Hashes
+      verrät oft den Algorithmus: 32 Zeichen → MD5/NTLM, 40 → SHA-1, 64 → SHA-256.
+
+      Schwache, ungesalzene Hashes lassen sich mit Wortlisten in Sekunden knacken:
+
+      ```
+      cf23b242ebcff4b019d457d062126bea
+      ```
+      (Ein typisches „Firmen-Passwort“: Jahreszeit + Jahr, alles klein.)
+    questions:
+      - key: crypto-4
+        prompt: Welcher Hash-Algorithmus wurde hier vermutlich verwendet?
+        answer: md5
+        points: 10
+      - key: crypto-5
+        prompt: Wie lautet das Klartext-Passwort?
+        answer: sommer2026
+        points: 30
+        hint: Probiere die vier Jahreszeiten mit dem aktuellen Jahr – z. B. mit hashcat und einer kleinen Wortliste, oder einem Online-Lookup im Lab.
+        explanation: Genau deshalb gehören Passwörter mit **bcrypt/Argon2 und Salt** gespeichert – und deshalb sind Jahreszeit-Passwörter verboten.

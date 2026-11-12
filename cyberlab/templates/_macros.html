@@ -1,0 +1,16 @@
+{% macro room_card(room, done=None, total=None) %}
+<a class="card room-card" href="{{ url_for('main.room', slug=room.slug) }}">
+  <div class="room-card-head">
+    <span class="tag">{{ room.category }}</span>
+    <span class="diff diff-{{ room.difficulty }}">{{ room.difficulty_label }}</span>
+  </div>
+  <h3>{{ room.title }}</h3>
+  <p class="muted">{{ room.summary }}</p>
+  <div class="room-card-foot">
+    {% if room.lab_template_vmid %}<span class="tag tag-lab">🖥 Lab-Maschine</span>{% endif %}
+    {% if room.estimated_minutes %}<span class="muted small">~{{ room.estimated_minutes }} Min.</span>{% endif %}
+    <span class="muted small">{{ room.total_points }} P</span>
+  </div>
+  {% if total %}<progress value="{{ done }}" max="{{ total }}"></progress>{% endif %}
+</a>
+{% endmacro %}

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Toolbox{% endblock %}
+{% block content %}
+<h1>Toolbox</h1>
+<p class="lead">Kleine Helfer zum Kodieren und Dekodieren. Alles läuft lokal in deinem Browser – nichts wird an den Server gesendet.</p>
+<div class="tools-layout">
+  <div class="card">
+    <label>Eingabe<textarea id="tool-in" rows="6" spellcheck="false"></textarea></label>
+    <div class="btn-row wrap">
+      <button class="btn btn-small" data-tool="b64enc">Base64 ⇢</button>
+      <button class="btn btn-small" data-tool="b64dec">⇠ Base64</button>
+      <button class="btn btn-small" data-tool="hexenc">Hex ⇢</button>
+      <button class="btn btn-small" data-tool="hexdec">⇠ Hex</button>
+      <button class="btn btn-small" data-tool="urlenc">URL ⇢</button>
+      <button class="btn btn-small" data-tool="urldec">⇠ URL</button>
+      <button class="btn btn-small" data-tool="rot13">ROT13</button>
+      <button class="btn btn-small" data-tool="binenc">Binär ⇢</button>
+      <button class="btn btn-small" data-tool="bindec">⇠ Binär</button>
+      <button class="btn btn-small" data-tool="jwt">JWT dekodieren</button>
+      <button class="btn btn-small" data-tool="sha1">SHA-1</button>
+      <button class="btn btn-small" data-tool="sha256">SHA-256</button>
+      <button class="btn btn-small" data-tool="hashid">Hash-Typ raten</button>
+    </div>
+    <label>Ausgabe<textarea id="tool-out" rows="8" readonly spellcheck="false"></textarea></label>
+    <button class="btn btn-ghost btn-small" id="tool-swap">Ausgabe → Eingabe</button>
+  </div>
+  <div class="card">
+    <h2>Spickzettel: nmap</h2>
+    <table class="table small">
+      <tr><td><code>nmap -sV 10.66.0.5</code></td><td>Dienste &amp; Versionen erkennen</td></tr>
+      <tr><td><code>nmap -p- 10.66.0.5</code></td><td>alle 65 535 TCP-Ports</td></tr>
+      <tr><td><code>nmap -sC -sV</code></td><td>Standard-Skripte + Versionen</td></tr>
+      <tr><td><code>nmap -O</code></td><td>Betriebssystem raten</td></tr>
+      <tr><td><code>nmap -sU --top-ports 50</code></td><td>häufigste UDP-Ports</td></tr>
+      <tr><td><code>nmap -oN scan.txt</code></td><td>Ergebnis speichern</td></tr>
+    </table>
+    <p class="muted small">Scans nur gegen Lab-Maschinen im Netz 10.66.0.0/16 – niemals gegen Institutssysteme.</p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='tools.js') }}"></script>{% endblock %}

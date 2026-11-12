@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<h1>Administration</h1>
+<nav class="subnav">
+  <a href="{{ url_for('admin.index') }}" class="active">Übersicht</a>
+  <a href="{{ url_for('admin.users') }}">Benutzer</a>
+  <a href="{{ url_for('admin.export_progress') }}">Fortschritt (CSV, aggregiert)</a>
+  <form method="post" action="{{ url_for('admin.reload_content') }}" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-small">Inhalte neu importieren</button>
+  </form>
+</nav>
+
+<div class="stats-row stats-cards">
+  <div class="card"><strong>{{ stats.users }}</strong><span>Benutzer</span></div>
+  <div class="card"><strong>{{ stats.rooms }}</strong><span>Räume</span></div>
+  <div class="card"><strong>{{ stats.solves }}</strong><span>Lösungen</span></div>
+  <div class="card"><strong>{{ stats.labs }}</strong><span>aktive Labs</span></div>
+</div>
+
+<h2>Aktive Lab-Maschinen</h2>
+<table class="table">
+  <thead><tr><th>VMID</th><th>Benutzer</th><th>Raum</th><th>Status</th><th>IP</th><th>Restzeit</th><th></th></tr></thead>
+  <tbody>
+  {% for lab in labs + errors %}
+    <tr>
+      <td>{{ lab.vmid }}</td><td>{{ lab.user.username }}</td><td>{{ lab.room.title }}</td>
+      <td><span class="status status-{{ lab.status }}">{{ lab.status }}</span></td>
+      <td><code>{{ lab.ip or '–' }}</code></td><td>{{ (lab.seconds_left // 60) }} Min.</td>
+      <td>
+        <form method="post" action="{{ url_for('admin.force_stop', lab_id=lab.id) }}" class="inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-danger btn-small" data-confirm="VM {{ lab.vmid }} löschen?">Löschen</button>
+        </form>
+      </td>
+    </tr>
+  {% else %}<tr><td colspan="7" class="muted">Keine laufenden Maschinen.</td></tr>{% endfor %}
+  </tbody>
+</table>
+
+<h2>Räume – Teilnahme</h2>
+<table class="table">
+  <thead><tr><th>Raum</th><th class="num">begonnen</th><th class="num">abgeschlossen</th><th class="num">Quote</th><th class="num">Fehlversuche</th></tr></thead>
+  <tbody>
+  {% for r in room_rows %}
+    <tr><td><a href="{{ url_for('main.room', slug=r.room.slug) }}">{{ r.room.title }}</a>{% if not r.room.published %} <span class="tag">Entwurf</span>{% endif %}</td>
+      <td class="num">{{ r.started }}</td><td class="num">{{ r.completed }}</td>
+      <td class="num">{{ r.rate }} %</td><td class="num">{{ r.wrong }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

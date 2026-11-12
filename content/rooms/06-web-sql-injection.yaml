@@ -1,0 +1,69 @@
+slug: web-sql-injection
+title: "Web-Sicherheit: SQL-Injection"
+summary: Wie ein einziges Hochkomma eine Datenbank öffnet – am Beispiel einer verwundbaren Proben-Datenbank.
+category: Web
+difficulty: mittel
+estimated_minutes: 60
+order: 60
+tags: [web, sqli, owasp, lab]
+
+lab:
+  template_vmid: 9002
+  minutes: 90
+  info: |
+    Öffne nach dem Start im Browser `http://<IP>/` – die „Probenverwaltung“ ist absichtlich verwundbar.
+
+tasks:
+  - title: Was ist SQL-Injection?
+    body: |
+      Wird Benutzereingabe ungeprüft in eine SQL-Abfrage eingebaut, kann man die Abfrage verändern:
+
+      ```sql
+      SELECT * FROM proben WHERE name = '<EINGABE>';
+      ```
+
+      Gibt man `' OR '1'='1` ein, wird die Bedingung immer wahr.
+    questions:
+      - key: sqli-1
+        prompt: Welches Projekt veröffentlicht die bekannte Top-10-Liste der Web-Schwachstellen? (Abkürzung)
+        answer: owasp
+        points: 10
+      - key: sqli-2
+        prompt: Welches einzelne Zeichen testet man typischerweise zuerst, um eine SQL-Injection zu provozieren?
+        answer: ["'", "hochkomma", "apostroph"]
+        points: 10
+
+  - title: Angriff im Lab
+    body: |
+      1. Öffne die Probenverwaltung und suche nach einer Probe.
+      2. Prüfe, ob die Suche verwundbar ist.
+      3. Nutze `UNION SELECT`, um Daten aus der Tabelle `benutzer` auszulesen.
+    questions:
+      - key: sqli-3
+        prompt: Wie viele Spalten liefert die ursprüngliche Suchabfrage?
+        answer: "4"
+        points: 20
+        hint: "`ORDER BY 1--`, `ORDER BY 2--`, … bis ein Fehler kommt."
+      - key: sqli-4
+        prompt: Welchen Benutzernamen hat der Administrator in der Tabelle `benutzer`?
+        answer: laborleitung
+        points: 20
+      - key: sqli-5
+        prompt: Im Feld `notiz` des Administrators steckt eine Flagge. Wie lautet sie?
+        answer: GOLM{pr3p4r3d_st4t3m3nts_r3tt3n_l3b3n}
+        case_sensitive: true
+        format: "GOLM{...}"
+        points: 40
+
+  - title: Verteidigung
+    body: |
+      Die wirksamste Gegenmaßnahme sind **Prepared Statements** (parametrisierte Abfragen):
+
+      ```python
+      cur.execute("SELECT * FROM proben WHERE name = ?", (eingabe,))
+      ```
+    questions:
+      - key: sqli-6
+        prompt: Wie heißen parametrisierte Abfragen, die SQL-Injection verhindern? (englischer Begriff)
+        answer: [prepared statements, prepared statement]
+        points: 10
