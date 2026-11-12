@@ -24,6 +24,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+# Skriptausführung für DIESEN Prozess erlauben (ohne die Systemrichtlinie zu ändern)
+Set-ExecutionPolicy -Scope Process Bypass -Force -ErrorAction SilentlyContinue
 $Repo = "MoinMeister3751/golm-cyberlab"
 
 function Step($m) { Write-Host "==> $m" -ForegroundColor Green }
@@ -45,6 +47,8 @@ try {
     Expand-Archive $zip -DestinationPath $tmp -Force
     $src = Join-Path $tmp "golm-cyberlab-$Branch"
     if (-not (Test-Path $src)) { $src = (Get-ChildItem $tmp -Directory | Select-Object -First 1).FullName }
+    # "Mark of the Web" von den entpackten Skripten entfernen (sonst blockt RemoteSigned)
+    Get-ChildItem $src -Recurse -File | Unblock-File -ErrorAction SilentlyContinue
 
     Step "Starte Installation"
     $params = @{ InstallDir = $InstallDir; Port = $Port; AdminUser = $AdminUser }

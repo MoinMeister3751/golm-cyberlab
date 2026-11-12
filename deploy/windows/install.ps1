@@ -32,26 +32,64 @@ $Source = (Resolve-Path "$PSScriptRoot\..\..").Path
 function Step($msg) { Write-Host "==> $msg" -ForegroundColor Green }
 
 # --- 1. Voraussetzungen -------------------------------------------------
-Step "Prüfe Python"
-$python = Get-Command python -ErrorAction SilentlyContinue
-if (-not $python -or -not ((& python --version 2>$null) -match "Python 3\.1[1-9]")) {
-    Step "Installiere Python 3.13 (winget)"
-    winget install -e --id Python.Python.3.13 --scope machine --accept-package-agreements --accept-source-agreements
-    $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine")
+function Update-Path {
+    $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
+                [Environment]::GetEnvironmentVariable("Path", "User")
 }
-$PythonExe = (Get-Command python).Source
+function Find-Python {
+    $c = Get-Command python -ErrorAction SilentlyContinue
+    if ($c -and ((& $c.Source --version 2>$null) -match "Python 3\.1[1-9]")) { return $c.Source }
+    foreach ($p in @("$env:ProgramFiles\Python313\python.exe", "$env:ProgramFiles\Python312\python.exe",
+                     "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe")) {
+        if (Test-Path $p) { return $p }
+    }
+    return $null
+}
+$HasWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
+
+Step "Prüfe Python"
+$PythonExe = Find-Python
+if (-not $PythonExe) {
+    if ($HasWinget) {
+        Step "Installiere Python 3.13 (winget)"
+        winget install -e --id Python.Python.3.13 --scope machine `
+            --accept-package-agreements --accept-source-agreements --disable-interactivity
+    } else {
+        Step "Installiere Python 3.13 (Direkt-Download)"
+        $pyInst = Join-Path $env:TEMP "python-3.13-amd64.exe"
+        Invoke-WebRequest "https://www.python.org/ftp/python/3.13.1/python-3.13.1-amd64.exe" `
+            -OutFile $pyInst -UseBasicParsing
+        Start-Process $pyInst -Wait -ArgumentList `
+            "/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_launcher=1"
+    }
+    Update-Path
+    $PythonExe = Find-Python
+}
+if (-not $PythonExe) { throw "Python 3.12+ nicht gefunden – bitte manuell installieren und erneut starten." }
 Write-Host "    $PythonExe ($(& $PythonExe --version))"
 
 Step "Prüfe NSSM"
-if (-not (Get-Command nssm -ErrorAction SilentlyContinue)) {
-    winget install -e --id NSSM.NSSM --accept-package-agreements --accept-source-agreements
-    $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine")
+$Nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
+if (-not $Nssm -and $HasWinget) {
+    winget install -e --id NSSM.NSSM --accept-package-agreements --accept-source-agreements --disable-interactivity
+    Update-Path
+    $Nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
 }
+if (-not $Nssm) {
+    Step "Installiere NSSM (Direkt-Download)"
+    $nz = Join-Path $env:TEMP "nssm.zip"; $nd = Join-Path $env:TEMP "nssm-extract"
+    Invoke-WebRequest "https://nssm.cc/release/nssm-2.24.zip" -OutFile $nz -UseBasicParsing
+    Expand-Archive $nz -DestinationPath $nd -Force
+    New-Item -ItemType Directory -Force "$InstallDir\bin" | Out-Null
+    Copy-Item "$nd\nssm-2.24\win64\nssm.exe" "$InstallDir\bin\nssm.exe" -Force
+    $Nssm = "$InstallDir\bin\nssm.exe"
+}
+Write-Host "    NSSM: $Nssm"
 
 # --- 2. Dateien kopieren -------------------------------------------------
 Step "Kopiere Anwendung nach $InstallDir"
 New-Item -ItemType Directory -Force -Path $InstallDir, "$InstallDir\instance", "$InstallDir\logs" | Out-Null
-if (Get-Service $ServiceName -ErrorAction SilentlyContinue) { nssm stop $ServiceName | Out-Null }
+if (Get-Service $ServiceName -ErrorAction SilentlyContinue) { & $Nssm stop $ServiceName | Out-Null }
 robocopy $Source $InstallDir /E /XD .venv instance logs .git __pycache__ tests /XF *.pyc /NFL /NDL /NJH /NJS | Out-Null
 
 # --- 3. venv + Abhängigkeiten -------------------------------------------
@@ -90,12 +128,12 @@ Pop-Location
 # --- 6. Windows-Dienst ---------------------------------------------------
 Step "Registriere Dienst $ServiceName"
 if (-not (Get-Service $ServiceName -ErrorAction SilentlyContinue)) {
-    nssm install $ServiceName $VenvPy "$InstallDir\run.py" | Out-Null
+    & $Nssm install $ServiceName $VenvPy "$InstallDir\run.py" | Out-Null
 }
-nssm set $ServiceName AppDirectory $InstallDir | Out-Null
-nssm set $ServiceName DisplayName "Golm CyberLab" | Out-Null
-nssm set $ServiceName Description "Interne IT-Security-Lernplattform" | Out-Null
-nssm set $ServiceName Start SERVICE_AUTO_START | Out-Null
+& $Nssm set $ServiceName AppDirectory $InstallDir | Out-Null
+& $Nssm set $ServiceName DisplayName "Golm CyberLab" | Out-Null
+& $Nssm set $ServiceName Description "Interne IT-Security-Lernplattform" | Out-Null
+& $Nssm set $ServiceName Start SERVICE_AUTO_START | Out-Null
 if ($InstallIIS) {
     # Hinter IIS: nur lokal binden, HTTPS-Cookies, Forwarded-Header auswerten
     $envExtra = @("CYBERLAB_HOST=127.0.0.1", "CYBERLAB_PORT=$Port", "CYBERLAB_SCHEME=https",
@@ -105,12 +143,12 @@ if ($InstallIIS) {
     $envExtra = @("CYBERLAB_HOST=$BindHost", "CYBERLAB_PORT=$Port", "CYBERLAB_SCHEME=http",
                   "CYBERLAB_HTTPS=0", "CYBERLAB_TRUST_PROXY=0")
 }
-nssm set $ServiceName AppEnvironmentExtra $envExtra | Out-Null
-nssm set $ServiceName AppStdout "$InstallDir\logs\cyberlab.log" | Out-Null
-nssm set $ServiceName AppStderr "$InstallDir\logs\cyberlab.log" | Out-Null
-nssm set $ServiceName AppRotateFiles 1 | Out-Null
-nssm set $ServiceName AppRotateBytes 10485760 | Out-Null
-nssm start $ServiceName | Out-Null
+& $Nssm set $ServiceName AppEnvironmentExtra $envExtra | Out-Null
+& $Nssm set $ServiceName AppStdout "$InstallDir\logs\cyberlab.log" | Out-Null
+& $Nssm set $ServiceName AppStderr "$InstallDir\logs\cyberlab.log" | Out-Null
+& $Nssm set $ServiceName AppRotateFiles 1 | Out-Null
+& $Nssm set $ServiceName AppRotateBytes 10485760 | Out-Null
+& $Nssm start $ServiceName | Out-Null
 Start-Sleep 3
 Write-Host "    Status: $((Get-Service $ServiceName).Status)"
 
