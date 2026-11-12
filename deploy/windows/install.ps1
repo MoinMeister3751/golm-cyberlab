@@ -36,28 +36,43 @@ function Update-Path {
     $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" +
                 [Environment]::GetEnvironmentVariable("Path", "User")
 }
+# Nur Python 3.11-3.13: fuer 3.14 fehlen noch Binaer-Wheels (PyYAML u.a. -> Compiler noetig).
+function Test-PyOk($exe) {
+    if (-not $exe -or -not (Test-Path $exe)) { return $false }
+    return ((& $exe --version 2>&1) -match "Python 3\.1[1-3]\b")
+}
 function Find-Python {
+    # 1) py-Launcher mit konkreter Version (robust, auch wenn 3.14 der Standard ist)
+    if (Get-Command py -ErrorAction SilentlyContinue) {
+        foreach ($v in @("3.12", "3.13", "3.11")) {
+            $p = (& py "-$v" -c "import sys; print(sys.executable)" 2>$null)
+            if ($LASTEXITCODE -eq 0 -and (Test-PyOk $p)) { return $p }
+        }
+    }
+    # 2) python im PATH, aber nur akzeptieren wenn passende Version
     $c = Get-Command python -ErrorAction SilentlyContinue
-    if ($c -and ((& $c.Source --version 2>$null) -match "Python 3\.1[1-9]")) { return $c.Source }
-    foreach ($p in @("$env:ProgramFiles\Python313\python.exe", "$env:ProgramFiles\Python312\python.exe",
+    if ($c -and (Test-PyOk $c.Source)) { return $c.Source }
+    # 3) bekannte Installationspfade
+    foreach ($p in @("$env:ProgramFiles\Python312\python.exe", "$env:ProgramFiles\Python313\python.exe",
+                     "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
                      "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe")) {
-        if (Test-Path $p) { return $p }
+        if (Test-PyOk $p) { return $p }
     }
     return $null
 }
 $HasWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
 
-Step "Pruefe Python"
+Step "Pruefe Python (3.11-3.13)"
 $PythonExe = Find-Python
 if (-not $PythonExe) {
     if ($HasWinget) {
-        Step "Installiere Python 3.13 (winget)"
-        winget install -e --id Python.Python.3.13 --scope machine `
+        Step "Installiere Python 3.12 (winget)"
+        winget install -e --id Python.Python.3.12 --scope machine `
             --accept-package-agreements --accept-source-agreements --disable-interactivity
     } else {
-        Step "Installiere Python 3.13 (Direkt-Download)"
-        $pyInst = Join-Path $env:TEMP "python-3.13-amd64.exe"
-        Invoke-WebRequest "https://www.python.org/ftp/python/3.13.1/python-3.13.1-amd64.exe" `
+        Step "Installiere Python 3.12 (Direkt-Download)"
+        $pyInst = Join-Path $env:TEMP "python-3.12-amd64.exe"
+        Invoke-WebRequest "https://www.python.org/ftp/python/3.12.8/python-3.12.8-amd64.exe" `
             -OutFile $pyInst -UseBasicParsing
         Start-Process $pyInst -Wait -ArgumentList `
             "/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_launcher=1"
@@ -65,7 +80,7 @@ if (-not $PythonExe) {
     Update-Path
     $PythonExe = Find-Python
 }
-if (-not $PythonExe) { throw "Python 3.12+ nicht gefunden - bitte manuell installieren und erneut starten." }
+if (-not $PythonExe) { throw "Python 3.11-3.13 nicht gefunden - bitte manuell installieren und erneut starten." }
 Write-Host "    $PythonExe ($(& $PythonExe --version))"
 
 Step "Pruefe NSSM"
@@ -94,10 +109,17 @@ robocopy $Source $InstallDir /E /XD .venv instance logs .git __pycache__ tests /
 
 # --- 3. venv + Abhaengigkeiten -------------------------------------------
 Step "Erzeuge virtuelle Umgebung"
-if (-not (Test-Path "$InstallDir\.venv")) { & $PythonExe -m venv "$InstallDir\.venv" }
 $VenvPy = "$InstallDir\.venv\Scripts\python.exe"
+# Vorhandenes venv nur behalten, wenn es eine passende Python-Version nutzt (sonst neu bauen)
+if ((Test-Path $VenvPy) -and -not (Test-PyOk $VenvPy)) {
+    Write-Host "    Verwerfe vorhandenes venv (falsche Python-Version)"
+    Remove-Item "$InstallDir\.venv" -Recurse -Force
+}
+if (-not (Test-Path $VenvPy)) { & $PythonExe -m venv "$InstallDir\.venv" }
 & $VenvPy -m pip install --upgrade pip --quiet
-& $VenvPy -m pip install -r "$InstallDir\requirements.txt" --quiet
+Step "Installiere Abhaengigkeiten (nur Binaer-Wheels)"
+& $VenvPy -m pip install --only-binary=:all: -r "$InstallDir\requirements.txt"
+if ($LASTEXITCODE -ne 0) { throw "pip-Installation fehlgeschlagen (siehe Ausgabe oben)." }
 
 # --- 4. Konfiguration ----------------------------------------------------
 $Cfg = "$InstallDir\instance\config.py"
@@ -155,10 +177,11 @@ Write-Host "    Status: $((Get-Service $ServiceName).Status)"
 # Firewall: Port freigeben, wenn direkt (ohne IIS) und nicht nur lokal gebunden
 if (-not $InstallIIS -and ($OpenFirewall -or $BindHost -ne "127.0.0.1")) {
     Step "Firewall-Regel fuer TCP $Port"
-    if (-not (Get-NetFirewallRule -DisplayName "Golm CyberLab HTTP" -ErrorAction SilentlyContinue)) {
-        New-NetFirewallRule -DisplayName "Golm CyberLab HTTP" -Direction Inbound -Protocol TCP `
-            -LocalPort $Port -Action Allow -Profile Domain, Private | Out-Null
-    }
+    # Vorhandene Regel entfernen, damit bei geaendertem Port der richtige Port freigegeben wird
+    Get-NetFirewallRule -DisplayName "Golm CyberLab HTTP" -ErrorAction SilentlyContinue |
+        Remove-NetFirewallRule -ErrorAction SilentlyContinue
+    New-NetFirewallRule -DisplayName "Golm CyberLab HTTP" -Direction Inbound -Protocol TCP `
+        -LocalPort $Port -Action Allow -Profile Domain, Private | Out-Null
     Write-Host "    Hinweis: Zugriff erfolgt unverschluesselt (HTTP). Fuer TLS bitte mit -InstallIIS betreiben." -ForegroundColor Yellow
 }
 
