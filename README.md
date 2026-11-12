@@ -22,17 +22,42 @@ python -m venv .venv
 
 Ohne Proxmox läuft alles im **Mock-Modus** (`PROXMOX_MOCK = True`): Lab-Starts werden simuliert.
 
-## Produktion
+## Produktion A: Windows Server 2025
 
-1. Proxmox vorbereiten (Labornetz, API-Token, Windows-Server-VM, Gateway):
-   [`deploy/proxmox/README.md`](deploy/proxmox/README.md)
-2. Auf der Windows-Server-2025-VM:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\deploy\windows\install.ps1 -AdminUser admin -InstallIIS
-   ```
-3. HTTPS über IIS: [`deploy/windows/IIS.md`](deploy/windows/IIS.md)
-4. `C:\CyberLab\instance\config.py` anpassen (Vorlage: `config.example.py`), `Restart-Service GolmCyberLab`
-5. Lab-Templates bauen: [`deploy/proxmox/lab-templates.md`](deploy/proxmox/lab-templates.md)
+**Ein-Befehl-Installation** – in einer PowerShell **als Administrator** ausführen:
+
+```powershell
+irm https://raw.githubusercontent.com/MoinMeister3751/golm-cyberlab/main/bootstrap.ps1 | iex
+```
+
+Das lädt den Code, installiert Python + NSSM, richtet den Dienst `GolmCyberLab` ein, importiert
+die Inhalte, legt ein Admin-Konto an und gibt am Ende die Aufruf-URL aus. Standardmäßig ist die
+Plattform danach direkt per **HTTP** erreichbar (Dienst an `0.0.0.0:8080`, Firewall offen).
+
+Mit Optionen (z. B. HTTPS über IIS, anderer Admin-Name):
+
+```powershell
+& ([scriptblock]::Create((irm https://raw.githubusercontent.com/MoinMeister3751/golm-cyberlab/main/bootstrap.ps1))) -InstallIIS -AdminUser admin
+```
+
+Danach:
+
+1. Proxmox vorbereiten (Labornetz, API-Token, VM, Gateway): [`deploy/proxmox/README.md`](deploy/proxmox/README.md)
+2. Bei `-InstallIIS`: HTTPS abschließen laut [`deploy/windows/IIS.md`](deploy/windows/IIS.md)
+3. `C:\CyberLab\instance\config.py` anpassen (Proxmox/LDAP), `Restart-Service GolmCyberLab`
+4. Lab-Templates bauen: [`deploy/proxmox/lab-templates.md`](deploy/proxmox/lab-templates.md)
+
+## Produktion B: Ubuntu mit Docker
+
+**Ein-Befehl-Installation** auf dem Ubuntu-Host:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/MoinMeister3751/golm-cyberlab/main/setup.sh | bash
+```
+
+Installiert bei Bedarf Docker, erzeugt `.env` (mit zufälligem Secret + Admin-Passwort) und startet
+App + Caddy-Reverse-Proxy. Konfiguration über `.env` (Vorlage: `.env.example`), HTTPS über
+`CYBERLAB_SITE_ADDRESS`. Details: [`deploy/docker/`](deploy/docker/).
 
 ## Inhalte pflegen
 

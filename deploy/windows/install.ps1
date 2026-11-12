@@ -18,6 +18,10 @@ param(
     [string]$InstallDir = "C:\CyberLab",
     [int]$Port = 8080,
     [string]$AdminUser = "",
+    # Netzwerk-Interface, an das der Dienst bindet. Standard 127.0.0.1 (nur hinter IIS).
+    # Für direkten HTTP-Zugriff ohne IIS: "0.0.0.0" (öffnet zugleich die Firewall).
+    [string]$BindHost = "127.0.0.1",
+    [switch]$OpenFirewall,
     [switch]$InstallIIS
 )
 
@@ -92,7 +96,16 @@ nssm set $ServiceName AppDirectory $InstallDir | Out-Null
 nssm set $ServiceName DisplayName "Golm CyberLab" | Out-Null
 nssm set $ServiceName Description "Interne IT-Security-Lernplattform" | Out-Null
 nssm set $ServiceName Start SERVICE_AUTO_START | Out-Null
-nssm set $ServiceName AppEnvironmentExtra "CYBERLAB_HOST=127.0.0.1" "CYBERLAB_PORT=$Port" "CYBERLAB_SCHEME=https" "CYBERLAB_TRUST_PROXY=1" | Out-Null
+if ($InstallIIS) {
+    # Hinter IIS: nur lokal binden, HTTPS-Cookies, Forwarded-Header auswerten
+    $envExtra = @("CYBERLAB_HOST=127.0.0.1", "CYBERLAB_PORT=$Port", "CYBERLAB_SCHEME=https",
+                  "CYBERLAB_HTTPS=1", "CYBERLAB_TRUST_PROXY=1")
+} else {
+    # Direkter Zugriff ohne Reverse-Proxy: reines HTTP, Cookies nicht TLS-pflichtig
+    $envExtra = @("CYBERLAB_HOST=$BindHost", "CYBERLAB_PORT=$Port", "CYBERLAB_SCHEME=http",
+                  "CYBERLAB_HTTPS=0", "CYBERLAB_TRUST_PROXY=0")
+}
+nssm set $ServiceName AppEnvironmentExtra $envExtra | Out-Null
 nssm set $ServiceName AppStdout "$InstallDir\logs\cyberlab.log" | Out-Null
 nssm set $ServiceName AppStderr "$InstallDir\logs\cyberlab.log" | Out-Null
 nssm set $ServiceName AppRotateFiles 1 | Out-Null
@@ -100,6 +113,16 @@ nssm set $ServiceName AppRotateBytes 10485760 | Out-Null
 nssm start $ServiceName | Out-Null
 Start-Sleep 3
 Write-Host "    Status: $((Get-Service $ServiceName).Status)"
+
+# Firewall: Port freigeben, wenn direkt (ohne IIS) und nicht nur lokal gebunden
+if (-not $InstallIIS -and ($OpenFirewall -or $BindHost -ne "127.0.0.1")) {
+    Step "Firewall-Regel für TCP $Port"
+    if (-not (Get-NetFirewallRule -DisplayName "Golm CyberLab HTTP" -ErrorAction SilentlyContinue)) {
+        New-NetFirewallRule -DisplayName "Golm CyberLab HTTP" -Direction Inbound -Protocol TCP `
+            -LocalPort $Port -Action Allow -Profile Domain, Private | Out-Null
+    }
+    Write-Host "    Hinweis: Zugriff erfolgt unverschlüsselt (HTTP). Für TLS bitte mit -InstallIIS betreiben." -ForegroundColor Yellow
+}
 
 # --- 7. Tägliches Backup der Datenbank ----------------------------------
 Step "Richte tägliches DB-Backup ein (02:30)"
@@ -116,4 +139,13 @@ if ($InstallIIS) {
     Write-Host "    URL Rewrite + ARR manuell installieren und web.config übernehmen – siehe deploy\windows\IIS.md" -ForegroundColor Yellow
 }
 
-Step "Fertig. Lokal testen: http://127.0.0.1:$Port"
+if ($InstallIIS) {
+    Step "Fertig. TLS/IIS gemäß deploy\windows\IIS.md abschließen. Lokal: http://127.0.0.1:$Port"
+} elseif ($BindHost -ne "127.0.0.1") {
+    $ip = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+           Where-Object { $_.IPAddress -notmatch '^127\.' -and $_.IPAddress -notmatch '^169\.254\.' } |
+           Select-Object -First 1).IPAddress
+    Step "Fertig. Aufruf im Browser: http://$($ip):$Port  (unverschlüsselt)"
+} else {
+    Step "Fertig. Lokal testen: http://127.0.0.1:$Port"
+}
