@@ -37,21 +37,26 @@ function Update-Path {
                 [Environment]::GetEnvironmentVariable("Path", "User")
 }
 # Nur Python 3.11-3.13: fuer 3.14 fehlen noch Binaer-Wheels (PyYAML u.a. -> Compiler noetig).
+# Alle Aufrufe in try/catch, da native Tools (py, python) nach stderr schreiben und das
+# bei $ErrorActionPreference='Stop' sonst zum Abbruch fuehrt.
 function Test-PyOk($exe) {
     if (-not $exe -or -not (Test-Path $exe)) { return $false }
-    return ((& $exe --version 2>&1) -match "Python 3\.1[1-3]\b")
+    try { $v = & $exe --version 2>&1 } catch { return $false }
+    return ("$v" -match "Python 3\.1[1-3]\b")
 }
 function Find-Python {
     # 1) py-Launcher mit konkreter Version (robust, auch wenn 3.14 der Standard ist)
-    if (Get-Command py -ErrorAction SilentlyContinue) {
-        foreach ($v in @("3.12", "3.13", "3.11")) {
-            $p = (& py "-$v" -c "import sys; print(sys.executable)" 2>$null)
+    foreach ($v in @("3.12", "3.13", "3.11")) {
+        try {
+            $p = & py "-$v" -c "import sys; print(sys.executable)" 2>$null
             if ($LASTEXITCODE -eq 0 -and (Test-PyOk $p)) { return $p }
-        }
+        } catch { }
     }
     # 2) python im PATH, aber nur akzeptieren wenn passende Version
-    $c = Get-Command python -ErrorAction SilentlyContinue
-    if ($c -and (Test-PyOk $c.Source)) { return $c.Source }
+    try {
+        $c = Get-Command python -ErrorAction SilentlyContinue
+        if ($c -and (Test-PyOk $c.Source)) { return $c.Source }
+    } catch { }
     # 3) bekannte Installationspfade
     foreach ($p in @("$env:ProgramFiles\Python312\python.exe", "$env:ProgramFiles\Python313\python.exe",
                      "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
@@ -67,8 +72,10 @@ $PythonExe = Find-Python
 if (-not $PythonExe) {
     if ($HasWinget) {
         Step "Installiere Python 3.12 (winget)"
-        winget install -e --id Python.Python.3.12 --scope machine `
-            --accept-package-agreements --accept-source-agreements --disable-interactivity
+        try {
+            winget install -e --id Python.Python.3.12 --scope machine `
+                --accept-package-agreements --accept-source-agreements --disable-interactivity
+        } catch { Write-Host "    winget: $($_.Exception.Message)" -ForegroundColor Yellow }
     } else {
         Step "Installiere Python 3.12 (Direkt-Download)"
         $pyInst = Join-Path $env:TEMP "python-3.12-amd64.exe"
@@ -86,7 +93,9 @@ Write-Host "    $PythonExe ($(& $PythonExe --version))"
 Step "Pruefe NSSM"
 $Nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
 if (-not $Nssm -and $HasWinget) {
-    winget install -e --id NSSM.NSSM --accept-package-agreements --accept-source-agreements --disable-interactivity
+    try {
+        winget install -e --id NSSM.NSSM --accept-package-agreements --accept-source-agreements --disable-interactivity
+    } catch { Write-Host "    winget: $($_.Exception.Message)" -ForegroundColor Yellow }
     Update-Path
     $Nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
 }
