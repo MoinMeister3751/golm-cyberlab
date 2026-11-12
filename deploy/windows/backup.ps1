@@ -1,4 +1,4 @@
-# Konsistentes Online-Backup der SQLite-Datenbank, behält die letzten 14 Stände.
+# Konsistentes Online-Backup der SQLite-Datenbank, behaelt die letzten 14 Staende.
 param([string]$InstallDir = "C:\CyberLab", [int]$Keep = 14)
 $ErrorActionPreference = "Stop"
 $dir = Join-Path $InstallDir "backup"

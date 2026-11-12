@@ -3,15 +3,15 @@
   Ein-Befehl-Installation von Golm CyberLab auf Windows Server 2025.
 
 .DESCRIPTION
-  Lädt das Repository als ZIP herunter (kein Git nötig) und führt deploy\windows\install.ps1 aus.
+  Laedt das Repository als ZIP herunter (kein Git noetig) und fuehrt deploy\windows\install.ps1 aus.
   Installiert Python und NSSM (per winget), richtet den Windows-Dienst "GolmCyberLab" ein,
   importiert die Inhalte und legt ein Admin-Konto an.
 
-  Standard: direkter HTTP-Zugriff (Dienst an 0.0.0.0, Firewall offen) – sofort erreichbar.
-  Mit -InstallIIS stattdessen hinter IIS mit HTTPS (TLS-Schritte danach gemäß IIS.md).
+  Standard: direkter HTTP-Zugriff (Dienst an 0.0.0.0, Firewall offen) - sofort erreichbar.
+  Mit -InstallIIS stattdessen hinter IIS mit HTTPS (TLS-Schritte danach gemaess IIS.md).
 
 .NOTES
-  In einer PowerShell ALS ADMINISTRATOR ausführen.
+  In einer PowerShell ALS ADMINISTRATOR ausfuehren.
 #>
 param(
     [string]$Branch = "main",
@@ -24,17 +24,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-# Skriptausführung für DIESEN Prozess erlauben (ohne die Systemrichtlinie zu ändern)
+# Skriptausfuehrung fuer DIESEN Prozess erlauben (ohne die Systemrichtlinie zu aendern)
 Set-ExecutionPolicy -Scope Process Bypass -Force -ErrorAction SilentlyContinue
 $Repo = "MoinMeister3751/golm-cyberlab"
 
 function Step($m) { Write-Host "==> $m" -ForegroundColor Green }
 
-# Administratorrechte prüfen (install.ps1 braucht sie)
+# Administratorrechte pruefen (install.ps1 braucht sie)
 $principal = New-Object Security.Principal.WindowsPrincipal(
     [Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    throw "Bitte PowerShell ALS ADMINISTRATOR öffnen und den Befehl erneut ausführen."
+    throw "Bitte PowerShell ALS ADMINISTRATOR oeffnen und den Befehl erneut ausfuehren."
 }
 
 $tmp = Join-Path $env:TEMP ("cyberlab-" + [guid]::NewGuid().ToString("N"))

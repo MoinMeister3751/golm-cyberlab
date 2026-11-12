@@ -5,8 +5,8 @@
 
 .DESCRIPTION
   - installiert Python 3.13 und NSSM (per winget), falls nicht vorhanden
-  - kopiert die Anwendung nach $InstallDir, legt venv an, installiert Abhängigkeiten
-  - erzeugt instance\config.py mit zufälligem SECRET_KEY (falls nicht vorhanden)
+  - kopiert die Anwendung nach $InstallDir, legt venv an, installiert Abhaengigkeiten
+  - erzeugt instance\config.py mit zufaelligem SECRET_KEY (falls nicht vorhanden)
   - importiert die Inhalte und legt optional ein lokales Admin-Konto an
   - registriert den Dienst "GolmCyberLab" (waitress auf 127.0.0.1:$Port)
   - optional: IIS mit Reverse-Proxy (siehe deploy/windows/IIS.md)
@@ -19,7 +19,7 @@ param(
     [int]$Port = 8080,
     [string]$AdminUser = "",
     # Netzwerk-Interface, an das der Dienst bindet. Standard 127.0.0.1 (nur hinter IIS).
-    # Für direkten HTTP-Zugriff ohne IIS: "0.0.0.0" (öffnet zugleich die Firewall).
+    # Fuer direkten HTTP-Zugriff ohne IIS: "0.0.0.0" (oeffnet zugleich die Firewall).
     [string]$BindHost = "127.0.0.1",
     [switch]$OpenFirewall,
     [switch]$InstallIIS
@@ -47,7 +47,7 @@ function Find-Python {
 }
 $HasWinget = [bool](Get-Command winget -ErrorAction SilentlyContinue)
 
-Step "Prüfe Python"
+Step "Pruefe Python"
 $PythonExe = Find-Python
 if (-not $PythonExe) {
     if ($HasWinget) {
@@ -65,10 +65,10 @@ if (-not $PythonExe) {
     Update-Path
     $PythonExe = Find-Python
 }
-if (-not $PythonExe) { throw "Python 3.12+ nicht gefunden – bitte manuell installieren und erneut starten." }
+if (-not $PythonExe) { throw "Python 3.12+ nicht gefunden - bitte manuell installieren und erneut starten." }
 Write-Host "    $PythonExe ($(& $PythonExe --version))"
 
-Step "Prüfe NSSM"
+Step "Pruefe NSSM"
 $Nssm = (Get-Command nssm -ErrorAction SilentlyContinue).Source
 if (-not $Nssm -and $HasWinget) {
     winget install -e --id NSSM.NSSM --accept-package-agreements --accept-source-agreements --disable-interactivity
@@ -92,7 +92,7 @@ New-Item -ItemType Directory -Force -Path $InstallDir, "$InstallDir\instance", "
 if (Get-Service $ServiceName -ErrorAction SilentlyContinue) { & $Nssm stop $ServiceName | Out-Null }
 robocopy $Source $InstallDir /E /XD .venv instance logs .git __pycache__ tests /XF *.pyc /NFL /NDL /NJH /NJS | Out-Null
 
-# --- 3. venv + Abhängigkeiten -------------------------------------------
+# --- 3. venv + Abhaengigkeiten -------------------------------------------
 Step "Erzeuge virtuelle Umgebung"
 if (-not (Test-Path "$InstallDir\.venv")) { & $PythonExe -m venv "$InstallDir\.venv" }
 $VenvPy = "$InstallDir\.venv\Scripts\python.exe"
@@ -112,7 +112,7 @@ if (-not (Test-Path $Cfg)) {
         Set-Content -Encoding UTF8 $Cfg
     Write-Host "    Bitte $Cfg anpassen (Proxmox, LDAP, HTTPS)." -ForegroundColor Yellow
 }
-# Nur SYSTEM und Administratoren dürfen Konfiguration (Secrets) lesen
+# Nur SYSTEM und Administratoren duerfen Konfiguration (Secrets) lesen
 icacls "$InstallDir\instance" /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" | Out-Null
 
 # --- 5. Datenbank + Inhalte ---------------------------------------------
@@ -154,16 +154,16 @@ Write-Host "    Status: $((Get-Service $ServiceName).Status)"
 
 # Firewall: Port freigeben, wenn direkt (ohne IIS) und nicht nur lokal gebunden
 if (-not $InstallIIS -and ($OpenFirewall -or $BindHost -ne "127.0.0.1")) {
-    Step "Firewall-Regel für TCP $Port"
+    Step "Firewall-Regel fuer TCP $Port"
     if (-not (Get-NetFirewallRule -DisplayName "Golm CyberLab HTTP" -ErrorAction SilentlyContinue)) {
         New-NetFirewallRule -DisplayName "Golm CyberLab HTTP" -Direction Inbound -Protocol TCP `
             -LocalPort $Port -Action Allow -Profile Domain, Private | Out-Null
     }
-    Write-Host "    Hinweis: Zugriff erfolgt unverschlüsselt (HTTP). Für TLS bitte mit -InstallIIS betreiben." -ForegroundColor Yellow
+    Write-Host "    Hinweis: Zugriff erfolgt unverschluesselt (HTTP). Fuer TLS bitte mit -InstallIIS betreiben." -ForegroundColor Yellow
 }
 
-# --- 7. Tägliches Backup der Datenbank ----------------------------------
-Step "Richte tägliches DB-Backup ein (02:30)"
+# --- 7. Taegliches Backup der Datenbank ----------------------------------
+Step "Richte taegliches DB-Backup ein (02:30)"
 $action = New-ScheduledTaskAction -Execute "powershell.exe" `
     -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$InstallDir\deploy\windows\backup.ps1`" -InstallDir `"$InstallDir`""
 $trigger = New-ScheduledTaskTrigger -Daily -At 2:30am
@@ -174,16 +174,16 @@ Register-ScheduledTask -TaskName "GolmCyberLab-Backup" -Action $action -Trigger 
 if ($InstallIIS) {
     Step "Installiere IIS"
     Install-WindowsFeature Web-Server, Web-WebSockets -IncludeManagementTools | Out-Null
-    Write-Host "    URL Rewrite + ARR manuell installieren und web.config übernehmen – siehe deploy\windows\IIS.md" -ForegroundColor Yellow
+    Write-Host "    URL Rewrite + ARR manuell installieren und web.config uebernehmen - siehe deploy\windows\IIS.md" -ForegroundColor Yellow
 }
 
 if ($InstallIIS) {
-    Step "Fertig. TLS/IIS gemäß deploy\windows\IIS.md abschließen. Lokal: http://127.0.0.1:$Port"
+    Step "Fertig. TLS/IIS gemaess deploy\windows\IIS.md abschliessen. Lokal: http://127.0.0.1:$Port"
 } elseif ($BindHost -ne "127.0.0.1") {
     $ip = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
            Where-Object { $_.IPAddress -notmatch '^127\.' -and $_.IPAddress -notmatch '^169\.254\.' } |
            Select-Object -First 1).IPAddress
-    Step "Fertig. Aufruf im Browser: http://$($ip):$Port  (unverschlüsselt)"
+    Step "Fertig. Aufruf im Browser: http://$($ip):$Port  (unverschluesselt)"
 } else {
     Step "Fertig. Lokal testen: http://127.0.0.1:$Port"
 }
